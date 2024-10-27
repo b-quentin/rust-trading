@@ -1,0 +1,11 @@
+[package]
+name = "root"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+binance = { git = "https://github.com/wisespace-io/binance-rs.git" }
+
+[[bin]]
+name = "app"
+path = "cmd/app/main.rs"
