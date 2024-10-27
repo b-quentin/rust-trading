@@ -1,5 +1,3 @@
-use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel};
-
 use super::TradingStrategy;
 
 pub struct Backtester {
@@ -13,13 +11,11 @@ impl Backtester {
 
     pub fn run(&self, klines: &[binance::model::KlineSummary]) {
         println!("Running backtester...");
-        let choppiness_index = ChoppinessIndex::new(klines, 100);
-        let donchian_channel = DonchianChannel::new(klines, 20, 20);
-        let atr_indicator = ATRStopLoss::new(klines, 12, 1.5);
+        let mut kline_manager = self.strategy.prepare(klines);
 
-        for i in 100..klines.len() {
-            let current_klines = &klines[0..=i];
-            self.strategy.execute(current_klines);
+        for i in 101..klines.len() {
+            let current_kline = &klines[i-1];
+            self.strategy.execute(current_kline.clone(), &mut kline_manager);
         }
     }
 }

@@ -1,18 +1,37 @@
 use binance::model::KlineSummary;
+use crate::strategy::interface::Observer;
+use std::any::Any;
 
 #[derive(Debug)]
 pub struct ATRStopLoss {
-    pub stop_loss: f64,
+    pub stop_losses: Vec<f64>, // Vecteur pour stocker plusieurs valeurs de Stop Loss
+    length: usize,             // Longueur pour le calcul de l'ATR
+    multiplier: f64,           // Multiplicateur pour le calcul du Stop Loss
 }
 
 impl ATRStopLoss {
     pub fn new(klines: &[KlineSummary], length: usize, multiplier: f64) -> Self {
-        let atr = Self::calculate_atr(klines, length);
-        let stop_loss = Self::calculate_stop_loss(klines, atr, multiplier);
-
-        Self {
-            stop_loss,
+        let mut stop_losses = Vec::new();
+        
+        // Calculer les valeurs initiales pour chaque période possible
+        for i in length..=klines.len() {
+            let atr = Self::calculate_atr(&klines[0..i], length);
+            let stop_loss = Self::calculate_stop_loss(&klines[0..i], atr, multiplier);
+            stop_losses.push(stop_loss);
         }
+
+        Self { stop_losses, length, multiplier }
+    }
+
+    // Ajouter une nouvelle valeur basée sur les données actuelles de klines
+    pub fn add(&mut self, klines: &[KlineSummary]) {
+        if klines.len() < self.length {
+            return; // Ne pas calculer si les données sont insuffisantes
+        }
+
+        let atr = Self::calculate_atr(klines, self.length);
+        let stop_loss = Self::calculate_stop_loss(klines, atr, self.multiplier);
+        self.stop_losses.push(stop_loss); // Ajouter la nouvelle valeur de Stop Loss calculée au vecteur
     }
 
     fn calculate_true_range(current: &KlineSummary, previous_close: f64) -> f64 {
@@ -67,4 +86,15 @@ impl ATRStopLoss {
         0.0
     }
 }
+
+impl Observer for ATRStopLoss {
+    fn on_new_kline(&mut self, _kline: &KlineSummary, all_klines: &[KlineSummary]) {
+        self.add(all_klines); // Met à jour avec toutes les klines disponibles
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
 

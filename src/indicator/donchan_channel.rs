@@ -1,28 +1,64 @@
+use std::any::Any;
+
 use binance::model::KlineSummary;
+
+use crate::strategy::interface::Observer;
 
 #[derive(Debug)]
 pub struct DonchianChannel {
-    pub upper_band: f64,
-    pub lower_band: f64,
-    pub basis: f64,
+    pub upper_band: Vec<f64>,  // Vecteur des bandes supérieures
+    pub lower_band: Vec<f64>,  // Vecteur des bandes inférieures
+    pub basis: Vec<f64>,       // Vecteur des lignes de base
+    length: usize,             // Longueur de la période pour le calcul
+    offset: usize,             // Décalage pour le calcul
 }
 
 impl DonchianChannel {
     pub fn new(klines: &[KlineSummary], length: usize, offset: usize) -> Self {
-        let upper_band = Self::get_highest_for_dc(klines, length, offset);
-        let lower_band = Self::get_lowest_for_dc(klines, length, offset);
-        let basis = Self::calculate_basis(upper_band, lower_band);
+        let mut upper_band = Vec::new();
+        let mut lower_band = Vec::new();
+        let mut basis = Vec::new();
+
+        // Calculer les valeurs pour chaque période en tenant compte du décalage
+        for i in offset..=klines.len() {
+            if i < length + offset {
+                continue; // Ignorer si on n'a pas encore assez de données
+            }
+
+            let current_upper = Self::get_highest_for_dc(&klines[0..i], length, offset);
+            let current_lower = Self::get_lowest_for_dc(&klines[0..i], length, offset);
+            let current_basis = Self::calculate_basis(current_upper, current_lower);
+
+            upper_band.push(current_upper);
+            lower_band.push(current_lower);
+            basis.push(current_basis);
+        }
 
         Self {
             upper_band,
             lower_band,
             basis,
+            length,
+            offset,
+        }
+    }
+
+    pub fn add(&mut self, all_klines: &[KlineSummary]) {
+        // Recalculer avec toutes les klines disponibles
+        if all_klines.len() >= self.length + self.offset {
+            let current_upper = Self::get_highest_for_dc(all_klines, self.length, self.offset);
+            let current_lower = Self::get_lowest_for_dc(all_klines, self.length, self.offset);
+            let current_basis = Self::calculate_basis(current_upper, current_lower);
+
+            self.upper_band.push(current_upper);
+            self.lower_band.push(current_lower);
+            self.basis.push(current_basis);
         }
     }
 
     fn get_lowest_for_dc(klines: &[KlineSummary], length: usize, offset: usize) -> f64 {
         if klines.len() < length + offset {
-            return f64::MAX; // Si les données ne sont pas suffisantes, retourner une valeur par défaut
+            return f64::MAX; // Retourner une valeur par défaut si les données sont insuffisantes
         }
 
         let start = klines.len() - length - offset;
@@ -36,7 +72,7 @@ impl DonchianChannel {
 
     fn get_highest_for_dc(klines: &[KlineSummary], length: usize, offset: usize) -> f64 {
         if klines.len() < length + offset {
-            return f64::MIN; // Si les données ne sont pas suffisantes, retourner une valeur par défaut
+            return f64::MIN; // Retourner une valeur par défaut si les données sont insuffisantes
         }
 
         let start = klines.len() - length - offset;
@@ -52,3 +88,13 @@ impl DonchianChannel {
         (upper + lower) / 2.0
     }
 }
+
+impl Observer for DonchianChannel {
+    fn on_new_kline(&mut self, _kline: &binance::model::KlineSummary, all_klines: &[binance::model::KlineSummary]) {
+        self.add(all_klines); // Recalculer et mettre à jour avec toutes les klines
+    }
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+

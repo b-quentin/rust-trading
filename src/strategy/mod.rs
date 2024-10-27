@@ -6,3 +6,6 @@ pub use chopiness_donchian_strategy::ChoppinessDonchianAtrStrategy;
 
 pub mod backtester;
 pub use backtester::Backtester;
+
+pub mod kline_manager;
+pub use kline_manager::KlineManager;

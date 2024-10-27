@@ -1,18 +1,47 @@
 use binance::model::KlineSummary;
+use crate::strategy::interface::Observer;
+use std::any::Any;
 
 #[derive(Debug)]
 pub struct ChoppinessIndex {
-    pub value: f64,
+    pub values: Vec<f64>,  // Vecteur pour stocker plusieurs valeurs de Choppiness Index
+    length: usize,         // Longueur pour le calcul
 }
 
 impl ChoppinessIndex {
     pub fn new(klines: &[KlineSummary], length: usize) -> Self {
-        let atr_sum = Self::calculate_atr_sum(klines, length);
-        let highest = Self::get_highest(klines, length);
-        let lowest = Self::get_lowest(klines, length);
-        let value = Self::calculate_choppiness_index(atr_sum, highest, lowest, length);
+        let mut values = Vec::new();
+        
+        // Ajouter des zéros pour les premières valeurs jusqu'à ce que nous ayons suffisamment de données
+        for _ in 0..(length - 1).min(klines.len()) {
+            values.push(0.0);
+        }
 
-        Self { value } 
+        // Commencer le calcul seulement après avoir assez de données
+        for i in (length - 1)..klines.len() {
+            let atr_sum = Self::calculate_atr_sum(&klines[(i + 1 - length)..=i], length);
+            let highest = Self::get_highest(&klines[(i + 1 - length)..=i], length);
+            let lowest = Self::get_lowest(&klines[(i + 1 - length)..=i], length);
+            let value = Self::calculate_choppiness_index(atr_sum, highest, lowest, length);
+            values.push(value);
+        }
+
+        Self { values, length }
+    }
+
+    // Ajouter une nouvelle valeur basée sur les données actuelles de klines
+    pub fn add(&mut self, klines: &[KlineSummary]) {
+        if klines.len() < self.length {
+            self.values.push(0.0); // Ajouter 0 si les données sont insuffisantes
+            return;
+        }
+
+        let atr_sum = Self::calculate_atr_sum(&klines[(klines.len() - self.length)..], self.length);
+        let highest = Self::get_highest(&klines[(klines.len() - self.length)..], self.length);
+        let lowest = Self::get_lowest(&klines[(klines.len() - self.length)..], self.length);
+        let value = Self::calculate_choppiness_index(atr_sum, highest, lowest, self.length);
+
+        self.values.push(value); // Ajouter la nouvelle valeur calculée au vecteur
     }
 
     fn calculate_true_range(current: &KlineSummary, previous_close: f64) -> f64 {
@@ -23,9 +52,9 @@ impl ChoppinessIndex {
             .max((low - previous_close).abs())
     }
 
-    fn calculate_atr_sum(klines: &[KlineSummary], length: usize) -> f64 {
+    fn calculate_atr_sum(klines: &[KlineSummary], _length: usize) -> f64 {
         let mut true_ranges = Vec::new();
-        for i in 1..=length.min(klines.len() - 1) {
+        for i in 1..klines.len() {
             let current = &klines[i];
             let previous_close = klines[i - 1].close.parse::<f64>().unwrap_or(0.0);
             let tr = Self::calculate_true_range(current, previous_close);
@@ -50,7 +79,7 @@ impl ChoppinessIndex {
 
     fn calculate_choppiness_index(atr_sum: f64, highest: f64, lowest: f64, length: usize) -> f64 {
         if highest - lowest == 0.0 {
-            return 0.0; // Avoid division by zero
+            return 0.0; // Éviter la division par zéro
         }
 
         let ratio = atr_sum / (highest - lowest);
@@ -60,3 +89,14 @@ impl ChoppinessIndex {
         100.0 * log10_ratio / log10_length
     }
 }
+
+impl Observer for ChoppinessIndex {
+    fn on_new_kline(&mut self, _kline: &KlineSummary, all_klines: &[KlineSummary]) {
+        self.add(all_klines); // Met à jour avec toutes les klines disponibles
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+}
+
