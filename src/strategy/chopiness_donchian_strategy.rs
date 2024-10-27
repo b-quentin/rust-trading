@@ -1,5 +1,5 @@
 use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel};
-
+use chrono::{DateTime, NaiveDateTime, Utc};
 use super::{KlineManager, TradingStrategy};
 
 pub struct ChoppinessDonchianAtrStrategy;
@@ -22,6 +22,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         manager.add_kline(kline.clone());
         
         println!("last kline: {:?}", kline);
+        println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
         // Récupérer le DonchianChannel et afficher `upper_band`
         if let Some(donchian_channel) = manager.get_donchian_channel() {
             println!("Upper Band: {:?}", donchian_channel.upper_band[donchian_channel.upper_band.len() - 1]);
@@ -35,4 +36,12 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
             println!("ATR Stop Loss: {:?}", atr_stop_loss.stop_losses[atr_stop_loss.stop_losses.len() - 1]);
         }
     }
+}
+
+
+fn convert_timestamp_to_datetime(timestamp: i64) -> String {
+    // Crée un NaiveDateTime à partir du timestamp (secondes depuis l'époque UNIX)
+    let naive = DateTime::from_timestamp_millis(timestamp).unwrap();
+
+    naive.format("%Y-%m-%d %H:%M:%S").to_string()
 }

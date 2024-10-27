@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 binance = { git = "https://github.com/wisespace-io/binance-rs.git" }
+chrono = "0.4"
 
 [[bin]]
 name = "app"
