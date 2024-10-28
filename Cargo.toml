@@ -6,6 +6,9 @@ edition = "2021"
 [dependencies]
 binance = { git = "https://github.com/wisespace-io/binance-rs.git" }
 chrono = "0.4"
+thiserror = "1.0"
+log = "0.4"
+env_logger = "0.9"
 
 [[bin]]
 name = "app"

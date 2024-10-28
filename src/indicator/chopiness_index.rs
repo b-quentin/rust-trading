@@ -88,6 +88,9 @@ impl ChoppinessIndex {
 
         100.0 * log10_ratio / log10_length
     }
+    pub fn get_last_value(&self) -> Option<f64> {
+        self.values.last().cloned()
+    }
 }
 
 impl Observer for ChoppinessIndex {

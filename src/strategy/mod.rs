@@ -10,3 +10,6 @@ pub use backtester::Backtester;
 
 pub mod kline_manager;
 pub use kline_manager::KlineManager;
+
+pub mod trades;
+pub use trades::TradesManager;
