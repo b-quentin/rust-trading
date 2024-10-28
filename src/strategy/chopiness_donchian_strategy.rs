@@ -40,7 +40,7 @@ impl ChoppinessDonchianAtrStrategy {
                 self.stop_loss = stop_loss;
                 let risk_amount = price - stop_loss;
                 println!("risk_amount: {}", risk_amount);
-                self.take_profit = price + ( risk_amount * 1.5 );
+                self.take_profit = price + ( risk_amount * 3.0 );
 
                 self.capital -= self.quantity * price;
                 println!("Mocking order: Buy {} of price {}, placing stop loss at {} and take profit at {}", self.symbol, price, self.stop_loss, self.take_profit);
