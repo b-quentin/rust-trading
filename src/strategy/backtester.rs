@@ -9,7 +9,7 @@ impl Backtester {
         Self { strategy }
     }
 
-    pub fn run(&self, klines: &[binance::model::KlineSummary]) {
+    pub fn run(&mut self, klines: &[binance::model::KlineSummary]) {
         println!("Running backtester...");
         let mut kline_manager = self.strategy.prepare(klines);
 

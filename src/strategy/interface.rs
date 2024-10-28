@@ -4,7 +4,7 @@ use super::KlineManager;
 
 pub trait TradingStrategy {
     fn prepare(&self, klines: &[binance::model::KlineSummary]) -> KlineManager;
-    fn execute(&self, klines: binance::model::KlineSummary, manager: &mut KlineManager);
+    fn execute(&mut self, klines: binance::model::KlineSummary, manager: &mut KlineManager);
 }
 
 pub trait Observer {

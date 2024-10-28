@@ -3,7 +3,7 @@ use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel};
 use super::interface::Observer;
 
 pub struct KlineManager {
-    klines: Vec<binance::model::KlineSummary>,
+    pub klines: Vec<binance::model::KlineSummary>,
     observers: Vec<Box<dyn Observer>>, // Liste d'observateurs dynamiques
 }
 

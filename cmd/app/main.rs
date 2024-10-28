@@ -1,7 +1,7 @@
 use binance::api::*;
 use binance::general::General;
 use binance::market::Market;
-use root::strategy::{Backtester, ChoppinessDonchianAtrStrategy};
+use root::strategy::{Backtester, ChoppinessDonchianAtrStrategy, Mode};
 
 fn get_symbols_ending_with_btc() -> Vec<String> {
     let general: General = Binance::new(None, None);
@@ -30,18 +30,8 @@ fn main() {
         Ok(klines) => {   
             match klines {
                 binance::model::KlineSummaries::AllKlineSummaries(klines) => {
-                    //let choppiness_index = ChoppinessIndex::new(&klines, 100);
-                    //println!("Choppiness Index: {:?}", choppiness_index);
-
-                    //let donchian_channel = DonchianChannel::new(&klines, 20, 20);
-                    //println!("Donchian Channel: {:?}", donchian_channel);
-
-                    //let atr_indicator = ATRStopLoss::new(&klines, 12, 1.5);
-                    //println!("ATR Stop Loss Indicator: {:?}", atr_indicator);
-
-                    // Crée une instance de la stratégie
-                    let strategy = ChoppinessDonchianAtrStrategy;
-                    let backtester = Backtester::new(Box::new(strategy));
+                    let strategy = ChoppinessDonchianAtrStrategy::new(Mode::Backtest, "ETHBTC");
+                    let mut backtester = Backtester::new(Box::new(strategy));
 
                     // Exécute le backtesting avec la stratégie spécifiée
                     backtester.run(&klines);
