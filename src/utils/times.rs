@@ -1,34 +1,68 @@
-use chrono::{NaiveDateTime, Utc, TimeZone};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use thiserror::Error;
+use log::{error, info};
 
 #[derive(Debug, Clone)]
 pub struct Time {
-    timestamp: u64,
+    timestamp: u64, // en millisecondes
+}
+
+#[derive(Error, Debug)]
+pub enum TimeError {
+    #[error("Erreur de parsing de date: {0}")]
+    DateParseError(#[from] chrono::ParseError),
+
+    #[error("Timestamp invalide : {0}")]
+    InvalidTimestamp(i64),
 }
 
 impl Time {
-    // Crée un nouvel objet Time à partir d'un timestamp UNIX en secondes
+    // Crée un nouvel objet Time à partir d'un timestamp UNIX en millisecondes
     pub fn from_unix(timestamp: u64) -> Self {
+        info!("Création de l'objet Time à partir du timestamp (ms) : {}", timestamp);
         Self { timestamp }
     }
 
-    // Crée un nouvel objet Time à partir d'une date en string (ex: "2024-10-29 15:30:00")
-    pub fn from_str(date_str: &str) -> Result<Self, Box<dyn std::error::Error>> {
+    // Crée un nouvel objet Time à partir d'une date en string (ex: "2024-10-29 15:30:00" ou en RFC 3339)
+    pub fn from_str(date_str: &str) -> Result<Self, TimeError> {
+        info!("Parsing de la date à partir de la chaîne : {}", date_str);
+
+        // Tente de parser la date en RFC 3339
+        if let Ok(datetime) = date_str.parse::<DateTime<Utc>>() {
+            let timestamp = datetime.timestamp_millis() as u64;
+            info!("Timestamp généré avec succès (ms) : {}", timestamp);
+            return Ok(Self { timestamp });
+        }
+
+        // Si cela échoue, tente le format personnalisé
         let naive_datetime = NaiveDateTime::parse_from_str(date_str, "%Y-%m-%d %H:%M:%S")?;
-        let timestamp = naive_datetime.and_utc().timestamp() as u64;
+        let timestamp = naive_datetime.and_utc().timestamp_millis() as u64;
+
+        info!("Timestamp généré avec succès (ms) : {}", timestamp);
         Ok(Self { timestamp })
     }
 
-    // Convertit le timestamp UNIX en une date formatée
+    // Convertit le timestamp UNIX en millisecondes en une date formatée
     pub fn to_string(&self) -> String {
-        if let Some(datetime) = Utc.timestamp_opt(self.timestamp as i64, 0).single() {
-            datetime.format("%Y-%m-%d %H:%M:%S").to_string()
-        } else {
-            "Invalid timestamp".to_string()
-        }
-    }    
+        let timestamp_in_seconds = self.timestamp / 1000; // Convertir en secondes pour Chrono
 
-    // Retourne le timestamp UNIX
+        match Utc.timestamp_opt(timestamp_in_seconds as i64, 0).single() {
+            Some(datetime) => {
+                let formatted_date = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+                info!("Conversion réussie du timestamp {} en date : {}", self.timestamp, formatted_date);
+                formatted_date
+            },
+            None => {
+                error!("Échec de la conversion pour le timestamp : {}", self.timestamp);
+                "Invalid timestamp".to_string()
+            }
+        }
+    }
+
+    // Retourne le timestamp UNIX en millisecondes pour un usage cohérent
     pub fn as_unix(&self) -> u64 {
         self.timestamp
     }
 }
+
+

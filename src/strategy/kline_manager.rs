@@ -33,6 +33,14 @@ impl KlineManager {
         }
     }
 
+    pub fn display_klines_one_by_one(&self) {
+        for kline in &self.klines {
+            println!("Kline: {:?}", kline);
+            println!("Kline Open {}", kline.open_time);
+            println!("Kline Close {}", kline.close_time);
+        }
+    }
+
     // Récupérer une référence à un `DonchianChannel` si c'est l'un des observateurs
     pub fn get_donchian_channel(&self) -> Option<&DonchianChannel> {
         for observer in &self.observers {

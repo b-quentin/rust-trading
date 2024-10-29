@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let market = Market::new(None, None);
 
     let now = Utc::now().to_rfc3339();
-    let start_time = Time::from_str("2024-01-01T00:00:00Z")?;
+    let start_time = Time::from_str("2024-10-28T00:00:00Z")?;
     let end_time = Time::from_str(&now)?;
 
     match klines::get_klines_summary_in_range(&market, "ETHBTC", "1d", &start_time, &end_time) {

@@ -1,4 +1,6 @@
-use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel};
+use std::{thread::sleep, time::Duration};
+
+use crate::{indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel}, strategy::kline_manager};
 use binance::{api::Binance, market::Market, model::KlineSummaries};
 use chrono::DateTime;
 use super::{KlineManager, TradingStrategy};
@@ -89,18 +91,18 @@ impl ChoppinessDonchianAtrStrategy {
 }
 
 impl TradingStrategy for ChoppinessDonchianAtrStrategy {
-    fn prepare(&self, kline1d: binance::model::KlineSummary, kline1h: binance::model::KlineSummary) -> (KlineManager, KlineManager) {
+    fn prepare(&self, kline: binance::model::KlineSummary) -> (KlineManager, KlineManager) {
         println!("Preparing ChoppinessDonchianAtrStrategy...");
         let market: Market = Binance::new(None, None);
 
         // Définir les intervalles pour les données horaires et journalières
         let interval_1h = "1h";
         let interval_1d = "1d";
-        let end_time_1h = Some(kline1h.open_time as u64);
-        let end_time_1d = Some(kline1d.open_time as u64);
+        let end_time_1h = Some(kline.open_time as u64);
+        let end_time_1d = Some(kline.open_time as u64);
 
         // Récupérer les 100 dernières klines horaires
-        let initial_klines_1h: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1h, Some(100), None, end_time_1h) {
+        let mut initial_klines_1h: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1h, Some(101), None, end_time_1h) {
             Ok(KlineSummaries::AllKlineSummaries(klines)) => {
                 println!("Fetched 100 previous 1h klines successfully.");
                 klines
@@ -111,8 +113,10 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
             }
         };
 
+        initial_klines_1h.pop();
+
         // Récupérer les 100 dernières klines journalières
-        let initial_klines_1d: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1d, Some(100), None, end_time_1d) {
+        let mut initial_klines_1d: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1d, Some(101), None, end_time_1d) {
             Ok(KlineSummaries::AllKlineSummaries(klines)) => {
                 println!("Fetched 100 previous 1d klines successfully.");
                 klines
@@ -122,6 +126,8 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
                 Vec::new()
             }
         };
+
+        initial_klines_1d.pop();
 
         // Initialiser les indicateurs pour les données horaires
         let donchian_channel_1h = Box::new(DonchianChannel::new(&initial_klines_1h, 20, 20));
@@ -147,6 +153,9 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
     fn execute(&mut self, kline: binance::model::KlineSummary, manager: &mut KlineManager) {
         //println!("Running ChoppinessDonchianAtrStrategy...");
         manager.add_kline(kline.clone());
+        manager.display_klines_one_by_one();
+        println!("sleep");
+        sleep(Duration::from_millis(6000)); // Pause de 500ms
 
         let last_kline = manager.klines[manager.klines.len() - 1].clone();
         let prev_kline = manager.klines[manager.klines.len() - 2].clone();
