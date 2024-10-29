@@ -87,6 +87,29 @@ impl DonchianChannel {
     fn calculate_basis(upper: f64, lower: f64) -> f64 {
         (upper + lower) / 2.0
     }
+
+    /// Récupère la dernière valeur de la bande supérieure (upper_band)
+    pub fn get_last_upper_band(&self) -> Option<f64> {
+        self.upper_band.last().cloned()
+    }
+
+    /// Récupère la dernière valeur de la bande inférieure (lower_band)
+    pub fn get_last_lower_band(&self) -> Option<f64> {
+        self.lower_band.last().cloned()
+    }
+
+    /// Récupère la dernière valeur de la ligne de base (basis)
+    pub fn get_last_basis(&self) -> Option<f64> {
+        self.basis.last().cloned()
+    }
+
+    pub fn get_prev_upper_band(&self) -> Option<f64> {
+        if self.upper_band.len() > 1 {
+            self.upper_band.get(self.upper_band.len() - 2).cloned()
+        } else {
+            None
+        }
+    }
 }
 
 impl Observer for DonchianChannel {

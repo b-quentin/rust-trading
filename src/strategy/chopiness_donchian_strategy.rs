@@ -150,79 +150,41 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
     }
 
     fn execute(&mut self, kline: binance::model::KlineSummary, manager1d: &mut KlineManager, manager1h: &mut KlineManager) {
-        //println!("Running ChoppinessDonchianAtrStrategy...");
+        println!("Running ChoppinessDonchianAtrStrategy...");
         manager1h.add_kline(kline.clone());
 
-        let last_kline = manager1h.klines[manager1h.klines.len() - 1].clone();
-        let prev_kline = manager1h.klines[manager1h.klines.len() - 2].clone();
-        let prev_close = prev_kline.close.parse::<f64>().unwrap_or(0.0);        
-        let close = last_kline.close.parse::<f64>().unwrap_or(0.0);
-        let obj_donchian_channel = manager1h.get_donchian_channel().unwrap();
-        let donchian_channel = obj_donchian_channel.upper_band[obj_donchian_channel.upper_band.len() - 1].clone();
-        let prev_donchian_channel = obj_donchian_channel.upper_band[obj_donchian_channel.upper_band.len() - 2].clone();
-        let obj_choppiness_index = manager1h.get_choppiness_index().unwrap();
-        let choppiness_index = obj_choppiness_index.values[obj_choppiness_index.values.len() - 1].clone();
-        let obj_atr_stop_loss = manager1h.get_atr_stop_loss().unwrap();
-        let atr_stop_loss = obj_atr_stop_loss.stop_losses[obj_atr_stop_loss.stop_losses.len() - 1].clone();
-        let obj_ema = manager1d.get_ema().unwrap();
-        let ema = obj_ema.values[obj_ema.values.len() -1].clone();
-        let last_kline1d = manager1d.klines[manager1d.klines.len() - 1].clone();
-        let kline1d_close = last_kline1d.close.parse::<f64>().unwrap_or(0.0); 
+        let prev_close_kline1h = manager1h.get_prev_last_close();
+        let last_close_kline1h = manager1h.get_last_close();
 
-        //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-        //println!("Prev Close: {}", prev_close);
-        //println!("Close: {}", close);
-        //println!("Donchian Channel: {}", donchian_channel);
-        //println!("Prev Donchian Channel: {}", prev_donchian_channel);
-        //println!("Choppiness Index: {}", choppiness_index);
+        let last_donchian_upper = manager1h.get_last_donchian_upper_band();
+        let prev_donchian_upper = manager1h.get_prev_donchian_upper_band();
+        let choppiness_index = manager1h.get_last_choppiness_index();
+
+        let atr_stop_loss = manager1h.get_last_atr_stop_loss();
+
+        let ema = manager1d.get_last_ema();
+
+        let last_close_kline1d = manager1d.get_last_close();
 
         if self.on_trade == false 
-            && prev_close < prev_donchian_channel
-            && close > donchian_channel 
+            && prev_close_kline1h < prev_donchian_upper
+            && last_close_kline1h > last_donchian_upper
             && choppiness_index <= 50.0 
-            && kline1d_close > ema {
+            && last_close_kline1d > ema {
             println!("Placing buy order...");
-            self.place_order_buy(close, atr_stop_loss);
+            self.place_order_buy(last_close_kline1h, atr_stop_loss);
             println!("last kline: {:?}", kline);
             println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-            // Récupérer le DonchianChannel et afficher `upper_band`
-            if let Some(donchian_channel) = manager1h.get_donchian_channel() {
-                println!("Upper Band: {:?}", donchian_channel.upper_band[donchian_channel.upper_band.len() - 1]);
-            } else {
-                println!("DonchianChannel non trouvé parmi les observateurs.");
-            }
-            if let Some(choppiness_index) = manager1h.get_choppiness_index() {
-                println!("Choppiness Index Values: {:?}", choppiness_index.values[choppiness_index.values.len() - 1]);
-            }
-            if let Some(atr_stop_loss) = manager1h.get_atr_stop_loss() {
-                println!("ATR Stop Loss: {:?}", atr_stop_loss.stop_losses[atr_stop_loss.stop_losses.len() - 1]);
-            }
         }
 
-        if self.on_trade == true && (close > self.take_profit || close < self.stop_loss) {
-            self.place_order_sell(close);
+        if self.on_trade == true && (last_close_kline1h > self.take_profit || last_close_kline1h < self.stop_loss) {
+            self.place_order_sell(last_close_kline1h);
         }
-        
-        //println!("last kline: {:?}", kline);
-        //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-        //// Récupérer le DonchianChannel et afficher `upper_band`
-        //if let Some(donchian_channel) = manager.get_donchian_channel() {
-        //    println!("Upper Band: {:?}", donchian_channel.upper_band[donchian_channel.upper_band.len() - 1]);
-        //} else {
-        //    println!("DonchianChannel non trouvé parmi les observateurs.");
-        //}
-        //if let Some(choppiness_index) = manager.get_choppiness_index() {
-        //    println!("Choppiness Index Values: {:?}", choppiness_index.values[choppiness_index.values.len() - 1]);
-        //}
-        //if let Some(atr_stop_loss) = manager.get_atr_stop_loss() {
-        //    println!("ATR Stop Loss: {:?}", atr_stop_loss.stop_losses[atr_stop_loss.stop_losses.len() - 1]);
-        //}
     }
 }
 
 
 fn convert_timestamp_to_datetime(timestamp: i64) -> String {
-    // Crée un NaiveDateTime à partir du timestamp (secondes depuis l'époque UNIX)
     let naive = DateTime::from_timestamp_millis(timestamp).unwrap();
 
     naive.format("%Y-%m-%d %H:%M:%S").to_string()

@@ -85,6 +85,10 @@ impl ATRStopLoss {
         }
         0.0
     }
+
+    pub fn get_last_stop_loss(&self) -> Option<f64> {
+        self.stop_losses.last().cloned()
+    }
 }
 
 impl Observer for ATRStopLoss {

@@ -50,6 +50,9 @@ impl EMA {
             self.values.push(new_ema);
         }
     }
+    pub fn get_last_value(&self) -> Option<f64> {
+        self.values.last().cloned()
+    }
 }
 
 // Exemple d'utilisation dans votre calcul de stratégie
