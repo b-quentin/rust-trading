@@ -6,3 +6,6 @@ pub use donchan_channel::DonchianChannel;
 
 pub mod atr_stop_loss;
 pub use atr_stop_loss::ATRStopLoss;
+
+pub mod ema;
+pub use ema::EMA;

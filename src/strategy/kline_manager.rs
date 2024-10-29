@@ -1,4 +1,4 @@
-use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel};
+use crate::indicator::{ATRStopLoss, ChoppinessIndex, DonchianChannel, EMA};
 
 use super::interface::Observer;
 
@@ -62,6 +62,15 @@ impl KlineManager {
         for observer in &self.observers {
             if let Some(donchian) = observer.as_any().downcast_ref::<ATRStopLoss>() {
                 return Some(donchian);
+            }
+        }
+        None
+    }
+
+    pub fn get_ema(&self) -> Option<&EMA> {
+        for observer in &self.observers {
+            if let Some(ema) = observer.as_any().downcast_ref::<EMA>() {
+                return Some(ema)
             }
         }
         None
