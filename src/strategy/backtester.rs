@@ -22,6 +22,10 @@ impl Backtester {
 
         for daily_kline in klines1d {
             self.strategy.execute_daily(daily_kline.clone(), &mut kline_manager_1d);
+            //println!("----------------------------------------------------------------");
+            //println!("{:?}", &Time::from_unix(daily_kline.open_time as u64).to_string());
+            //println!("{:?}", &Time::from_unix(daily_kline.close_time as u64).to_string());
+
             match klines::get_klines_summary_in_range(
                 &market,
                 "ETHBTC",
@@ -31,16 +35,16 @@ impl Backtester {
             ) {
                 Ok(klines_1h) => {
                     for kline_1h in klines_1h {
+                        //println!("{:?}", &Time::from_unix(kline_1h.open_time as u64).to_string());
                         //println!("{:?}", &Time::from_unix(kline_1h.close_time as u64).to_string());
                         // Exécute la logique de stratégie avec kline1h
-                        self.strategy.execute(kline_1h.clone(), &mut kline_manager_1d, &mut kline_manager_1h);
+                        self.strategy.execute(kline_1h.clone(), &kline_manager_1d, &mut kline_manager_1h);
                     }
                 }
                 Err(e) => eprintln!("Erreur: {:?}", e),
             }
 
-            // Exécute la logique de stratégie avec kline1d
-            // self.strategy.execute_daily(daily_kline.clone(), &mut kline_manager);
+            //println!("{:?}", &Time::from_unix(daily_kline.close_time as u64).to_string());
         }
     }
 }

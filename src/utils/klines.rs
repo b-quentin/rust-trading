@@ -22,7 +22,7 @@ pub fn get_symbols_ending_with_btc() -> Vec<String> {
     }
 }
 
-pub fn get_klines_summary_in_range(
+pub fn get_klines_summary_in_long_range(
     market: &Market,
     symbol: &str,
     interval: &str,
@@ -61,5 +61,26 @@ pub fn get_klines_summary_in_range(
     }
 
     Ok(all_klines)
+}
+
+pub fn get_klines_summary_in_range(
+    market: &Market,
+    symbol: &str,
+    interval: &str,
+    start_time: &Time,
+    end_time: &Time,
+) -> Result<Vec<KlineSummary>, Box<dyn Error>> {
+    // Utilisation de la méthode `get_klines` avec les temps de début et de fin
+    let klines = match market.get_klines(
+        symbol,
+        interval,
+        None,  // Pas de limite spécifiée ici
+        Some(start_time.as_unix()),
+        Some(end_time.as_unix()),
+    )? {
+        binance::model::KlineSummaries::AllKlineSummaries(k) => k,
+    };
+
+    Ok(klines)
 }
 

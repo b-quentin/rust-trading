@@ -13,8 +13,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let now = Utc::now().to_rfc3339();
     let start_time = Time::from_str("2024-01-01T00:00:00Z")?;
     let end_time = Time::from_str(&now)?;
+    //let start_time = Time::from_str("2024-09-01T00:00:00Z")?;
+    //let end_time = Time::from_str("2024-10-01T00:00:00Z")?;
 
-    match klines::get_klines_summary_in_range(&market, "ETHBTC", "1d", &start_time, &end_time) {
+    match klines::get_klines_summary_in_long_range(&market, "SOLBTC", "1d", &start_time, &end_time) {
         Ok(klines1d) => {
             let strategy = ChoppinessDonchianAtrStrategy::new(Mode::Backtest, "ETHBTC");
             let mut backtester = Backtester::new(Box::new(strategy));
@@ -25,27 +27,3 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-
-
-    //match market.get_klines("ETHBTC", "1h", 999, None, None) {
-    //    Ok(klines) => {   
-    //        match klines {
-    //            binance::model::KlineSummaries::AllKlineSummaries(klines) => {
-    //                let strategy = ChoppinessDonchianAtrStrategy::new(Mode::Backtest, "ETHBTC");
-    //                let mut backtester = Backtester::new(Box::new(strategy));
-
-    //                // Exécute le backtesting avec la stratégie spécifiée
-    //                backtester.run(&klines);
-
-    //                // Optionnel : Afficher les Klines pour vérifier
-    //                //for kline in klines {
-    //                //    println!(
-    //                //        "Open: {}, High: {}, Low: {}",
-    //                //        kline.open, kline.high, kline.low
-    //                //    );
-    //                //}
-    //            }
-    //        }
-    //    },
-    //    Err(e) => println!("Error: {}", e),
-    //}

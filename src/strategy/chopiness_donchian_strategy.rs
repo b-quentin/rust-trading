@@ -37,6 +37,7 @@ impl ChoppinessDonchianAtrStrategy {
 
         match self.mode {
             Mode::Backtest => {
+                println!("-----------------------------------------------------------------");
                 // Simuler un achat pour le backtesting
                 self.stop_loss = stop_loss;
                 let risk_amount = price - stop_loss;
@@ -61,6 +62,7 @@ impl ChoppinessDonchianAtrStrategy {
 
         match self.mode {
             Mode::Backtest => {
+                println!("-----------------------------------------------------------------");
                 // Simuler un achat pour le backtesting
                 println!("Mocking order: Sell {} of price {}", self.symbol, price);
                 if price >= self.take_profit {
@@ -90,7 +92,6 @@ impl ChoppinessDonchianAtrStrategy {
 
 impl TradingStrategy for ChoppinessDonchianAtrStrategy {
     fn prepare(&self, kline: binance::model::KlineSummary) -> (KlineManager, KlineManager) {
-        println!("Preparing ChoppinessDonchianAtrStrategy...");
         let market: Market = Binance::new(None, None);
 
         // Définir les intervalles pour les données horaires et journalières
@@ -136,7 +137,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         let kline_manager_1h = KlineManager::new(initial_klines_1h, vec![donchian_channel_1h, choppiness_index_1h, atr_stop_loss_1h]);
 
         // Initialiser les indicateurs pour les données journalières (exemple, vous pouvez ajuster selon vos besoins)
-        let ema_1d = Box::new(EMA::new(&initial_klines_1d, 200, 200));
+        let ema_1d = Box::new(EMA::new(&initial_klines_1d, 100, 100));
 
         // Créer le KlineManager pour les données journalières
         let kline_manager_1d = KlineManager::new(initial_klines_1d, vec![ema_1d]);
@@ -149,8 +150,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         manager1d.add_kline(kline.clone());
     }
 
-    fn execute(&mut self, kline: binance::model::KlineSummary, manager1d: &mut KlineManager, manager1h: &mut KlineManager) {
-        println!("Running ChoppinessDonchianAtrStrategy...");
+    fn execute(&mut self, kline: binance::model::KlineSummary, manager1d: &KlineManager, manager1h: &mut KlineManager) {
         manager1h.add_kline(kline.clone());
 
         let prev_close_kline1h = manager1h.get_prev_last_close();
@@ -169,8 +169,8 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         if self.on_trade == false 
             && prev_close_kline1h < prev_donchian_upper
             && last_close_kline1h > last_donchian_upper
-            && choppiness_index <= 50.0 
-            && last_close_kline1d > ema {
+            && choppiness_index <= 50.0 {
+            //&& last_close_kline1d > ema {
             println!("Placing buy order...");
             self.place_order_buy(last_close_kline1h, atr_stop_loss);
             println!("last kline: {:?}", kline);
