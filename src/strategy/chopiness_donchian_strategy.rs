@@ -165,20 +165,20 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         //let kline_open_1h = manager1h.get_last_kline();
         //dbg!(kline_open_1h);
 
-        //let last_donchian_upper = manager1h.get_last_donchian_upper_band();
-        //let prev_donchian_upper = manager1h.get_prev_donchian_upper_band();
-        //let choppiness_index = manager1h.get_last_choppiness_index();
+        let last_donchian_upper = manager1h.get_last_donchian_upper_band();
+        let prev_donchian_upper = manager1h.get_prev_donchian_upper_band();
+        let choppiness_index = manager1h.get_last_choppiness_index();
 
         let atr_stop_loss = manager1h.get_last_atr_stop_loss();
 
-        let ema50_1d = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
-        let ema200_1d = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
-        let ema50_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema50").unwrap_or_default();
-        let ema200_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema200").unwrap_or_default();
-        let ema50_1h = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
-        let ema200_1h = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
+        //let ema50_1d = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
+        //let ema200_1d = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
+        //let ema50_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema50").unwrap_or_default();
+        //let ema200_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema200").unwrap_or_default();
+        //let ema50_1h = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
+        //let ema200_1h = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
 
-        let chop = manager1d.get_last_choppiness_index();
+        //let chop = manager1d.get_last_choppiness_index();
 
         //let test: bool = if ema50_1d > ema200_1d { true } else { false };
         //println!("ema50 : {}", ema50_1d);
@@ -198,28 +198,28 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         //println!("bool ema prev: {}", test2);
 
 
-        if self.on_trade == false && ema50_1d > ema200_1d && ema50_1h > ema200_1h && chop <= 50.0
-        && ((prev_close_kline1h < ema50_prev_1h && last_close_kline1h > ema50_1h) || (prev_close_kline1h < ema200_prev_1h && last_close_kline1h > ema200_1h))
-        {
-            self.place_order_buy(last_close_kline1h, atr_stop_loss);
-            //println!("last kline: {:?}", kline);
-            //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-            //println!("ema50 : {}", ema50);
-            //println!("ema200 : {}", ema200);
-        }
+        //if self.on_trade == false && ema50_1d > ema200_1d && ema50_1h > ema200_1h && chop <= 50.0
+        //&& ((prev_close_kline1h < ema50_prev_1h && last_close_kline1h > ema50_1h) || (prev_close_kline1h < ema200_prev_1h && last_close_kline1h > ema200_1h))
+        //{
+        //    self.place_order_buy(last_close_kline1h, atr_stop_loss);
+        //    //println!("last kline: {:?}", kline);
+        //    //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
+        //    //println!("ema50 : {}", ema50);
+        //    //println!("ema200 : {}", ema200);
+        //}
 
         //let last_close_kline1d = manager1d.get_last_close();
 
-        //if self.on_trade == false 
-        //    && prev_close_kline1h < prev_donchian_upper
-        //    && last_close_kline1h > last_donchian_upper
-        //    && choppiness_index <= 50.0 {
-        //    //&& last_close_kline1d > ema {
-        //    println!("Placing buy order...");
-        //    self.place_order_buy(last_close_kline1h, atr_stop_loss);
-        //    println!("last kline: {:?}", kline);
-        //    println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-        //}
+        if self.on_trade == false 
+            && prev_close_kline1h < prev_donchian_upper
+            && last_close_kline1h > last_donchian_upper
+            && choppiness_index <= 50.0 {
+            //&& last_close_kline1d > ema {
+            println!("Placing buy order...");
+            self.place_order_buy(last_close_kline1h, atr_stop_loss);
+            println!("last kline: {:?}", kline);
+            println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
+        }
 
         if self.on_trade == true && (last_close_kline1h > self.take_profit || last_close_kline1h < self.stop_loss) {
             self.place_order_sell(last_close_kline1h);

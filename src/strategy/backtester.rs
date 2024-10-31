@@ -21,7 +21,6 @@ impl Backtester {
         let market: Market = Binance::new(None, None);
 
         for daily_kline in klines1d {
-            self.strategy.execute_daily(daily_kline.clone(), &mut kline_manager_1d);
             //println!("----------------------------------------------------------------");
             //println!("{:?}", &Time::from_unix(daily_kline.open_time as u64).to_string());
             //println!("{:?}", &Time::from_unix(daily_kline.close_time as u64).to_string());
@@ -43,6 +42,7 @@ impl Backtester {
                 }
                 Err(e) => eprintln!("Erreur: {:?}", e),
             }
+            self.strategy.execute_daily(daily_kline.clone(), &mut kline_manager_1d);
 
             //println!("{:?}", &Time::from_unix(daily_kline.close_time as u64).to_string());
         }
