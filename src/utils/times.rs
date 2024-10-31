@@ -1,6 +1,22 @@
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Datelike, NaiveDateTime, TimeZone, Utc};
 use thiserror::Error;
 use log::{error, info};
+
+#[derive(Debug)]
+pub enum Month {
+	January,
+	February,
+	March,
+	April,
+	May,
+	June,
+	July,
+	August,
+	September,
+	October,
+	November,
+	December,
+}
 
 #[derive(Debug, Clone)]
 pub struct Time {
@@ -59,9 +75,25 @@ impl Time {
         }
     }
 
-    // Retourne le timestamp UNIX en millisecondes pour un usage cohérent
-    pub fn as_unix(&self) -> u64 {
-        self.timestamp
+    pub fn get_month(&self) -> Month {
+        let datetime = DateTime::from_timestamp(self.timestamp as i64, 0).unwrap_or(DateTime::default());
+
+        let month = datetime.month0() + 1;
+        match month {
+            1 => Month::January,
+            2 => Month::February,
+            3 => Month::March,
+            4 => Month::April,
+            5 => Month::May,
+            6 => Month::June,
+            7 => Month::July,
+            8 => Month::August,
+            9 => Month::September,
+            10 => Month::October,
+            11 => Month::November,
+            12 => Month::December,
+            _ => panic!("Unknown month"),
+        }
     }
 }
 

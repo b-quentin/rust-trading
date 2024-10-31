@@ -150,7 +150,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         manager1d.add_kline(kline.clone());
     }
 
-    fn execute(&mut self, kline: binance::model::KlineSummary, manager1d: &KlineManager, manager1h: &mut KlineManager) {
+    fn execute(&mut self, kline: binance::model::KlineSummary, _manager1d: &KlineManager, manager1h: &mut KlineManager) {
         manager1h.add_kline(kline.clone());
 
         let prev_close_kline1h = manager1h.get_prev_last_close();
@@ -162,9 +162,9 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
 
         let atr_stop_loss = manager1h.get_last_atr_stop_loss();
 
-        let ema = manager1d.get_last_ema();
+        //let ema = manager1d.get_last_ema();
 
-        let last_close_kline1d = manager1d.get_last_close();
+        //let last_close_kline1d = manager1d.get_last_close();
 
         if self.on_trade == false 
             && prev_close_kline1h < prev_donchian_upper
