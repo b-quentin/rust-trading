@@ -4,12 +4,13 @@ use std::any::Any;
 
 #[derive(Debug)]
 pub struct ChoppinessIndex {
+    pub id: String, // Ajout d'un champ pour l'identifiant
     pub values: Vec<f64>,  // Vecteur pour stocker plusieurs valeurs de Choppiness Index
     length: usize,         // Longueur pour le calcul
 }
 
 impl ChoppinessIndex {
-    pub fn new(klines: &[KlineSummary], length: usize) -> Self {
+    pub fn new(id: String, klines: &[KlineSummary], length: usize) -> Self {
         let mut values = Vec::new();
         
         // Ajouter des zéros pour les premières valeurs jusqu'à ce que nous ayons suffisamment de données
@@ -26,7 +27,11 @@ impl ChoppinessIndex {
             values.push(value);
         }
 
-        Self { values, length }
+        Self { 
+            id, 
+            values, 
+            length 
+        }
     }
 
     // Ajouter une nouvelle valeur basée sur les données actuelles de klines
@@ -100,6 +105,12 @@ impl Observer for ChoppinessIndex {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+    fn id(&self) -> &str {
+        &self.id
     }
 }
 

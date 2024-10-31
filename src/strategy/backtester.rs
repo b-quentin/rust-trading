@@ -28,7 +28,7 @@ impl Backtester {
 
             match klines::get_klines_summary_in_range(
                 &market,
-                "ETHBTC",
+                "SOLBTC",
                 "1h",
                 &Time::from_unix(daily_kline.open_time as u64),
                 &Time::from_unix(daily_kline.close_time as u64),

@@ -67,14 +67,50 @@ impl KlineManager {
         None
     }
 
-    pub fn get_ema(&self) -> Option<&EMA> {
+    pub fn get_ema_by_id(&self, id: &str) -> Option<&EMA> {
         for observer in &self.observers {
             if let Some(ema) = observer.as_any().downcast_ref::<EMA>() {
-                return Some(ema)
+                if ema.id() == id {
+                    return Some(ema);
+                }
             }
         }
         None
     }
+
+    pub fn get_ema_mut_by_id(&mut self, id: &str) -> Option<&mut EMA> {
+        for observer in self.observers.iter_mut() {
+            if let Some(ema) = observer.as_any_mut().downcast_mut::<EMA>() {
+                if ema.id() == id {
+                    return Some(ema);
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_last_ema_value_by_id(&self, id: &str) -> Option<f64> {
+        for observer in &self.observers {
+            if let Some(ema) = observer.as_any().downcast_ref::<EMA>() {
+                if ema.id() == id {
+                    return ema.get_last_value(); // Récupère la dernière valeur
+                }
+            }
+        }
+        None
+    }
+
+    pub fn get_last_prev_ema_value_by_id(&self, id: &str) -> Option<f64> {
+        for observer in &self.observers {
+            if let Some(ema) = observer.as_any().downcast_ref::<EMA>() {
+                if ema.id() == id {
+                    return Some(ema.get_last_prev_value()); // Récupère la dernière valeur
+                }
+            }
+        }
+        None
+    }
+
     // Get the last kline
     pub fn get_last_kline(&self) -> Option<&binance::model::KlineSummary> {
         self.klines.last()
@@ -134,11 +170,6 @@ impl KlineManager {
     pub fn get_last_atr_stop_loss(&self) -> f64 {
         self.get_atr_stop_loss()
             .and_then(|atr| atr.get_last_stop_loss())
-            .unwrap_or(0.0)
-    }
-    pub fn get_last_ema(&self) -> f64 {
-        self.get_ema()
-            .and_then(|ema| ema.get_last_value())
             .unwrap_or(0.0)
     }
 }

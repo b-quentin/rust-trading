@@ -6,13 +6,14 @@ use crate::strategy::interface::Observer;
 
 #[derive(Debug)]
 pub struct EMA {
+    pub id: String, // Ajout d'un champ pour l'identifiant
     pub values: Vec<f64>, // Stocke directement les valeurs de l'EMA sans `Option`
     period: usize,
     offset: usize,
 }
 
 impl EMA {
-    pub fn new(klines: &[KlineSummary], period: usize, offset: usize) -> Self {
+    pub fn new(id: String, klines: &[KlineSummary], period: usize, offset: usize) -> Self {
         let mut values = vec![0.0; offset]; // Initialise avec des zéros pour le décalage initial
 
         if klines.len() >= period + offset {
@@ -35,6 +36,7 @@ impl EMA {
         }
 
         Self {
+            id,
             values,
             period,
             offset,
@@ -53,6 +55,10 @@ impl EMA {
     pub fn get_last_value(&self) -> Option<f64> {
         self.values.last().cloned()
     }
+
+    pub fn get_last_prev_value(&self) -> f64 {
+        self.values[self.values.len() - 2]
+    }
 }
 
 // Exemple d'utilisation dans votre calcul de stratégie
@@ -62,6 +68,12 @@ impl Observer for EMA {
     }
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+    fn id(&self) -> &str {
+        &self.id
     }
 }
 

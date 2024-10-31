@@ -4,13 +4,14 @@ use std::any::Any;
 
 #[derive(Debug)]
 pub struct ATRStopLoss {
+    pub id: String, // Ajout d'un champ pour l'identifiant
     pub stop_losses: Vec<f64>, // Vecteur pour stocker plusieurs valeurs de Stop Loss
     length: usize,             // Longueur pour le calcul de l'ATR
     multiplier: f64,           // Multiplicateur pour le calcul du Stop Loss
 }
 
 impl ATRStopLoss {
-    pub fn new(klines: &[KlineSummary], length: usize, multiplier: f64) -> Self {
+    pub fn new(id: String, klines: &[KlineSummary], length: usize, multiplier: f64) -> Self {
         let mut stop_losses = Vec::new();
         
         // Calculer les valeurs initiales pour chaque période possible
@@ -20,7 +21,12 @@ impl ATRStopLoss {
             stop_losses.push(stop_loss);
         }
 
-        Self { stop_losses, length, multiplier }
+        Self { 
+            id, 
+            stop_losses, 
+            length, 
+            multiplier 
+        }
     }
 
     // Ajouter une nouvelle valeur basée sur les données actuelles de klines
@@ -98,6 +104,12 @@ impl Observer for ATRStopLoss {
 
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+    fn id(&self) -> &str {
+        &self.id
     }
 }
 

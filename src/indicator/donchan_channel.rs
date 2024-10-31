@@ -6,6 +6,7 @@ use crate::strategy::interface::Observer;
 
 #[derive(Debug)]
 pub struct DonchianChannel {
+    pub id: String, // Ajout d'un champ pour l'identifiant
     pub upper_band: Vec<f64>,  // Vecteur des bandes supérieures
     pub lower_band: Vec<f64>,  // Vecteur des bandes inférieures
     pub basis: Vec<f64>,       // Vecteur des lignes de base
@@ -14,7 +15,7 @@ pub struct DonchianChannel {
 }
 
 impl DonchianChannel {
-    pub fn new(klines: &[KlineSummary], length: usize, offset: usize) -> Self {
+    pub fn new(id: String, klines: &[KlineSummary], length: usize, offset: usize) -> Self {
         let mut upper_band = Vec::new();
         let mut lower_band = Vec::new();
         let mut basis = Vec::new();
@@ -35,6 +36,7 @@ impl DonchianChannel {
         }
 
         Self {
+            id,
             upper_band,
             lower_band,
             basis,
@@ -118,6 +120,12 @@ impl Observer for DonchianChannel {
     }
     fn as_any(&self) -> &dyn Any {
         self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
+        self
+    }
+    fn id(&self) -> &str {
+        &self.id
     }
 }
 

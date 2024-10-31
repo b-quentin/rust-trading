@@ -34,6 +34,9 @@ impl ChoppinessDonchianAtrStrategy {
     fn place_order_buy(&mut self, price: f64, stop_loss: f64) {
         self.on_trade = true;
         self.quantity = self.capital / price;
+        println!("capital: {}", self.capital);
+        println!("price: {}", price);
+        println!("quantity: {}", self.quantity);
 
         match self.mode {
             Mode::Backtest => {
@@ -101,7 +104,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         let end_time_1d = Some(kline.open_time as u64);
 
         // Récupérer les 100 dernières klines horaires
-        let mut initial_klines_1h: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1h, Some(101), None, end_time_1h) {
+        let mut initial_klines_1h: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1h, Some(201), None, end_time_1h) {
             Ok(KlineSummaries::AllKlineSummaries(klines)) => {
                 println!("Fetched 100 previous 1h klines successfully.");
                 klines
@@ -115,7 +118,7 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         initial_klines_1h.pop();
 
         // Récupérer les 100 dernières klines journalières
-        let mut initial_klines_1d: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1d, Some(101), None, end_time_1d) {
+        let mut initial_klines_1d: Vec<binance::model::KlineSummary> = match market.get_klines(self.symbol.clone(), interval_1d, Some(201), None, end_time_1d) {
             Ok(KlineSummaries::AllKlineSummaries(klines)) => {
                 println!("Fetched 100 previous 1d klines successfully.");
                 klines
@@ -129,18 +132,22 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         initial_klines_1d.pop();
 
         // Initialiser les indicateurs pour les données horaires
-        let donchian_channel_1h = Box::new(DonchianChannel::new(&initial_klines_1h, 20, 20));
-        let choppiness_index_1h = Box::new(ChoppinessIndex::new(&initial_klines_1h, 100));
-        let atr_stop_loss_1h = Box::new(ATRStopLoss::new(&initial_klines_1h, 14, 1.5));
+        let donchian_channel_1h = Box::new(DonchianChannel::new("dc".to_string(), &initial_klines_1h, 20, 20));
+        let choppiness_index_1h = Box::new(ChoppinessIndex::new("ch".to_string(), &initial_klines_1h, 100));
+        let atr_stop_loss_1h = Box::new(ATRStopLoss::new("atr".to_string(), &initial_klines_1h, 14, 1.5));
+        let ema_1h_50 = Box::new(EMA::new("ema50".to_string(), &initial_klines_1h, 50, 0));
+        let ema_1h_200 = Box::new(EMA::new("ema200".to_string(), &initial_klines_1h, 200, 0));
 
         // Créer le KlineManager pour les données horaires
-        let kline_manager_1h = KlineManager::new(initial_klines_1h, vec![donchian_channel_1h, choppiness_index_1h, atr_stop_loss_1h]);
+        let kline_manager_1h = KlineManager::new(initial_klines_1h, vec![donchian_channel_1h, choppiness_index_1h, atr_stop_loss_1h, ema_1h_50, ema_1h_200]);
 
         // Initialiser les indicateurs pour les données journalières (exemple, vous pouvez ajuster selon vos besoins)
-        let ema_1d = Box::new(EMA::new(&initial_klines_1d, 100, 100));
+        let choppiness_index_1d = Box::new(ChoppinessIndex::new("ch".to_string(), &initial_klines_1d, 100));
+        let ema_1d_50 = Box::new(EMA::new("ema50".to_string(), &initial_klines_1d, 50, 0));
+        let ema_1d_200 = Box::new(EMA::new("ema200".to_string(), &initial_klines_1d, 200, 0));
 
         // Créer le KlineManager pour les données journalières
-        let kline_manager_1d = KlineManager::new(initial_klines_1d, vec![ema_1d]);
+        let kline_manager_1d = KlineManager::new(initial_klines_1d, vec![ema_1d_50,ema_1d_200, choppiness_index_1d]);
 
         // Retourner les deux KlineManager
         (kline_manager_1d, kline_manager_1h)
@@ -150,32 +157,69 @@ impl TradingStrategy for ChoppinessDonchianAtrStrategy {
         manager1d.add_kline(kline.clone());
     }
 
-    fn execute(&mut self, kline: binance::model::KlineSummary, _manager1d: &KlineManager, manager1h: &mut KlineManager) {
+    fn execute(&mut self, kline: binance::model::KlineSummary, manager1d: &KlineManager, manager1h: &mut KlineManager) {
         manager1h.add_kline(kline.clone());
 
         let prev_close_kline1h = manager1h.get_prev_last_close();
         let last_close_kline1h = manager1h.get_last_close();
+        //let kline_open_1h = manager1h.get_last_kline();
+        //dbg!(kline_open_1h);
 
-        let last_donchian_upper = manager1h.get_last_donchian_upper_band();
-        let prev_donchian_upper = manager1h.get_prev_donchian_upper_band();
-        let choppiness_index = manager1h.get_last_choppiness_index();
+        //let last_donchian_upper = manager1h.get_last_donchian_upper_band();
+        //let prev_donchian_upper = manager1h.get_prev_donchian_upper_band();
+        //let choppiness_index = manager1h.get_last_choppiness_index();
 
         let atr_stop_loss = manager1h.get_last_atr_stop_loss();
 
-        //let ema = manager1d.get_last_ema();
+        let ema50_1d = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
+        let ema200_1d = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
+        let ema50_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema50").unwrap_or_default();
+        let ema200_prev_1h = manager1d.get_last_prev_ema_value_by_id("ema200").unwrap_or_default();
+        let ema50_1h = manager1d.get_last_ema_value_by_id("ema50").unwrap_or_default();
+        let ema200_1h = manager1d.get_last_ema_value_by_id("ema200").unwrap_or_default();
+
+        let chop = manager1d.get_last_choppiness_index();
+
+        //let test: bool = if ema50_1d > ema200_1d { true } else { false };
+        //println!("ema50 : {}", ema50_1d);
+        //println!("ema200 : {}", ema200_1d);
+        //println!("bool ema day: {}", test);
+        //let test3: bool = if ema50_1h > ema200_1h { true } else { false };
+        //println!("bool ema 1h: {}", test3);
+
+        //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
+        //println!("ema50 prev : {}", ema50_prev_1h);
+        //println!("ema200 prev : {}", ema200_prev_1h);
+        //println!("ema50 1h : {}", ema50_1h);
+        //println!("ema200 1h : {}", ema200_1h);
+        //println!("last_close_kline1h : {}", last_close_kline1h);
+        //println!("prev last_close_kline1h : {}", prev_close_kline1h);
+        //let test2: bool = if prev_close_kline1h < ema50_prev_1h && last_close_kline1h > ema50_1h { true } else { false };
+        //println!("bool ema prev: {}", test2);
+
+
+        if self.on_trade == false && ema50_1d > ema200_1d && ema50_1h > ema200_1h && chop <= 50.0
+        && ((prev_close_kline1h < ema50_prev_1h && last_close_kline1h > ema50_1h) || (prev_close_kline1h < ema200_prev_1h && last_close_kline1h > ema200_1h))
+        {
+            self.place_order_buy(last_close_kline1h, atr_stop_loss);
+            //println!("last kline: {:?}", kline);
+            //println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
+            //println!("ema50 : {}", ema50);
+            //println!("ema200 : {}", ema200);
+        }
 
         //let last_close_kline1d = manager1d.get_last_close();
 
-        if self.on_trade == false 
-            && prev_close_kline1h < prev_donchian_upper
-            && last_close_kline1h > last_donchian_upper
-            && choppiness_index <= 50.0 {
-            //&& last_close_kline1d > ema {
-            println!("Placing buy order...");
-            self.place_order_buy(last_close_kline1h, atr_stop_loss);
-            println!("last kline: {:?}", kline);
-            println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
-        }
+        //if self.on_trade == false 
+        //    && prev_close_kline1h < prev_donchian_upper
+        //    && last_close_kline1h > last_donchian_upper
+        //    && choppiness_index <= 50.0 {
+        //    //&& last_close_kline1d > ema {
+        //    println!("Placing buy order...");
+        //    self.place_order_buy(last_close_kline1h, atr_stop_loss);
+        //    println!("last kline: {:?}", kline);
+        //    println!("closed time: {}", convert_timestamp_to_datetime(kline.close_time));
+        //}
 
         if self.on_trade == true && (last_close_kline1h > self.take_profit || last_close_kline1h < self.stop_loss) {
             self.place_order_sell(last_close_kline1h);
