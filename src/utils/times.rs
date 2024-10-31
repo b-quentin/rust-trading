@@ -18,7 +18,7 @@ pub enum Month {
 	December,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Time {
     timestamp: u64, // en millisecondes
 }
@@ -37,6 +37,10 @@ impl Time {
     pub fn from_unix(timestamp: u64) -> Self {
         info!("Création de l'objet Time à partir du timestamp (ms) : {}", timestamp);
         Self { timestamp }
+    }
+
+    pub fn get_timestamp(&self) -> u64 {
+        self.timestamp
     }
 
     // Crée un nouvel objet Time à partir d'une date en string (ex: "2024-10-29 15:30:00" ou en RFC 3339)

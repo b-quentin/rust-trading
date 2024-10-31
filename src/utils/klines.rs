@@ -31,17 +31,15 @@ pub fn get_klines_summary_in_long_range(
 ) -> Result<Vec<KlineSummary>, Box<dyn Error>> {
     let mut all_klines = Vec::new();
 
-    // Convertir start_time et end_time en timestamps UNIX
-    let mut current_start = start_time.as_unix();
-    let end_timestamp = end_time.as_unix();
+    let mut end_timestamp = end_time.clone(); // Dereference to make a copy of `end_time`
 
-    while current_start < end_timestamp {
+    while start_time < &end_timestamp {
         // Utilisation de match pour gérer KlineSummaries
         let klines = match market.get_klines(
             symbol,
             interval,
             999,
-            Some(current_start),
+            start_time.get_timestamp(),
             None,
         )? {
             binance::model::KlineSummaries::AllKlineSummaries(k) => k,
@@ -57,7 +55,7 @@ pub fn get_klines_summary_in_long_range(
 
         // Met à jour la valeur de current_start pour la prochaine itération
         let last_kline_time = klines.last().unwrap().close_time as u64;
-        current_start = last_kline_time + 1;
+        end_timestamp = Time::from_unix(last_kline_time + 1); // Create a new `Time` instance
     }
 
     Ok(all_klines)
@@ -75,8 +73,8 @@ pub fn get_klines_summary_in_range(
         symbol,
         interval,
         None,  // Pas de limite spécifiée ici
-        Some(start_time.as_unix()),
-        Some(end_time.as_unix()),
+        start_time.get_timestamp(),
+        end_time.get_timestamp(),
     )? {
         binance::model::KlineSummaries::AllKlineSummaries(k) => k,
     };

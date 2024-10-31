@@ -3,14 +3,14 @@ use binance::model::KlineSummary;
 use crate::utils::times::{Month, Time};
 
 #[derive(Debug)]
-enum WinOrLoose {
+pub enum WinOrLoose {
     Win,
     Loose,
     Undefined,
 }
 
 #[derive(Debug)]
-struct ResultTrade {
+pub struct ResultTrade {
     amount: f64,
     percentage: f64,
     win_or_loose: WinOrLoose,
